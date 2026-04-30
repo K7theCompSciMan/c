@@ -13,9 +13,9 @@ export async function GET({ url, fetch }) {
 
 	const auth = ftcAuth();
 
-	// FTC API v2.0: eventCode is a path segment, NOT a query param.
-	// Correct URL: GET /v2.0/{season}/{eventCode}/matches
-	const apiUrl = `https://ftc-api.firstinspires.org/v2.0/2025/schedule/${event}/?tournamentLevel=qual&?teamNumber=${team}`;
+	// FTC API v2.0: endpoint is /matches/{eventCode}
+	// Correct URL: GET /v2.0/{season}/matches/{eventCode}?tournamentLevel=qual
+	const apiUrl = `https://ftc-api.firstinspires.org/v2.0/2025/matches/${event}?tournamentLevel=qual`;
 
 	const res = await fetch(apiUrl, {
 		headers: {
@@ -26,7 +26,7 @@ export async function GET({ url, fetch }) {
 
 	if (!res.ok) {
 		const text = await res.text();
-		console.log(text);
+		console.error('FTC API error:', text);
 		return new Response(JSON.stringify({ error: `FTC API error ${res.status}`, detail: text }), {
 			status: res.status,
 			headers: { 'Content-Type': 'application/json' }
@@ -34,7 +34,6 @@ export async function GET({ url, fetch }) {
 	}
 
 	const raw = await res.text();
-    console.log(raw);
 	let data: { schedule?: unknown[] };
 	try {
 		data = JSON.parse(raw);
@@ -45,8 +44,13 @@ export async function GET({ url, fetch }) {
 		);
 	}
 
-	// FTC API returns lowercase "matches" array; filter by teamNumber client-side
-    const teamMatches: any[] = data.schedule!;
+	// FTC API returns "schedule" array with match details
+	const allMatches: any[] = data.schedule || [];
+	
+	// Filter to only matches involving this team
+	const teamMatches = allMatches.filter((match: any) => 
+		match.teams?.some((t: any) => String(t.teamNumber) === team)
+	);
 
 	return Response.json({ Matches: teamMatches });
 }
