@@ -18,8 +18,7 @@ export async function GET({ url, fetch }) {
   // teamNumber query param so the API does the filtering server-side.
   // Endpoint: GET /v3.0/{season}/schedule/hybrid/{eventCode}?teamNumber={n}&tournamentLevel=qual
   const apiUrl =
-    `https://frc-api.firstinspires.org/v3.0/2026/schedule/${event}` +
-    `?teamNumber=${team}&tournamentLevel=qual`;
+    `https://frc-api.firstinspires.org/v3.0/2026/matches/${event}?tournamentLevel=Qualification&?teamNumber=${team}`;
 
   const res = await fetch(apiUrl, {
     headers: {
@@ -39,8 +38,8 @@ export async function GET({ url, fetch }) {
 
   // Read the body ONCE — never pre-consume with getReader() before res.text()/res.json()
   const raw = await res.text();
-
-  let data: { Schedule?: unknown[] };
+  // console.log(raw);
+  let data: { Matches?: unknown[] };
   try {
     data = JSON.parse(raw);
   } catch {
@@ -50,6 +49,13 @@ export async function GET({ url, fetch }) {
     );
   }
 
+  const allMatches = data.Matches ?? [];
+
+  const teamMatches = allMatches.filter((match: any) => 
+		match.teams?.some((t: any) => String(t.teamNumber) == team)
+	);
+  // console.log(teamMatches)
+
   // Hybrid schedule wraps results in "Schedule", not "Matches"
-  return Response.json({ Matches: data.Schedule ?? [] });
+  return Response.json({ Matches: teamMatches });
 }

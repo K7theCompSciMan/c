@@ -16,6 +16,7 @@ export type TeamInfo = {
 };
 
 export type MatchEntry = {
+  autoStartTime?: string;
   matchNumber: number;
   description?: string;
   startTime?: string;
@@ -38,3 +39,5 @@ export type MatchEntry = {
   /** Queue status */
   queueStatus?: 'upcoming' | 'queued' | 'in-progress' | 'completed';
 };
+
+export type FTCMatchEntry

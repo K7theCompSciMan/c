@@ -15,7 +15,8 @@ export async function GET({ url, fetch }) {
 
 	// FTC API v2.0: endpoint is /matches/{eventCode}
 	// Correct URL: GET /v2.0/{season}/matches/{eventCode}?tournamentLevel=qual
-	const apiUrl = `https://ftc-api.firstinspires.org/v2.0/2025/matches/${event}?tournamentLevel=qual`;
+	const apiUrl = `https://ftc-api.firstinspires.org/v2.0/2025/matches/${event}/?tournamentLevel=qual`;
+    const schedUrl = `https://ftc-api.firstinspires.org/v2.0/2025/schedule/${event}/?tournamentLevel=qual`
 
 	const res = await fetch(apiUrl, {
 		headers: {
@@ -23,6 +24,13 @@ export async function GET({ url, fetch }) {
 			Accept: 'application/json'
 		}
 	});
+
+    const schedRes = await fetch(schedUrl, {
+        headers: {
+			Authorization: `Basic ${auth}`,
+			Accept: 'application/json'
+		}
+    });
 
 	if (!res.ok) {
 		const text = await res.text();
@@ -33,8 +41,18 @@ export async function GET({ url, fetch }) {
 		});
 	}
 
+	if (!schedRes.ok) {
+		const text = await schedRes.text();
+		console.error('FTC API error:', text);
+		return new Response(JSON.stringify({ error: `FTC API error ${schedRes.status}`, detail: text }), {
+			status: schedRes.status,
+			headers: { 'Content-Type': 'application/json' }
+		});
+	}
+
 	const raw = await res.text();
-	let data: { schedule?: unknown[] };
+    // console.log(raw);
+	let data: { matches?: unknown[] };
 	try {
 		data = JSON.parse(raw);
 	} catch {
@@ -45,12 +63,36 @@ export async function GET({ url, fetch }) {
 	}
 
 	// FTC API returns "schedule" array with match details
-	const allMatches: any[] = data.schedule || [];
-	
+	const allMatches: any[] = data.matches || [];
+	// console.log(allMatches);
 	// Filter to only matches involving this team
 	const teamMatches = allMatches.filter((match: any) => 
-		match.teams?.some((t: any) => String(t.teamNumber) === team)
+		match.teams?.some((t: any) => String(t.teamNumber) == team)
 	);
 
-	return Response.json({ Matches: teamMatches });
+    const schedRaw = await schedRes.text();
+    // console.log(schedRaw);
+	let schedData: { schedule?: unknown[] };
+	try {
+		schedData = JSON.parse(schedRaw);
+	} catch {
+		return Response.json(
+			{ error: 'Invalid JSON from FTC API', rawPreview: schedRaw.slice(0, 300) },
+			{ status: 502 }
+		);
+	}
+
+    const allSchedMatches = schedData.schedule ?? [];
+
+    const teamSchedMatches = allSchedMatches.filter((match: any) => 
+		match.teams?.some((t: any) => String(t.teamNumber) == team)
+	);
+
+    // console.log(teamSchedMatches.slice(teamMatches.length));
+
+    const finalMatches = teamMatches.concat(teamSchedMatches.slice(teamMatches.length))
+    // console.log(allSchedMatches);
+
+    // console.log(teamMatches)
+	return Response.json({ Matches: finalMatches });
 }
