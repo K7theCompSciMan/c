@@ -385,7 +385,7 @@
 					<!-- Collapsed view: only show next match -->
 					{#if nextMatch && !isLoading}
 						<div
-							class="mb-4 rounded-lg border border-blue-700/50 bg-gradient-to-r from-blue-900/50 to-purple-900/50 p-3"
+							class="mb-4 rounded-lg border border-blue-700/50 bg-linear-to-r from-blue-900/50 to-purple-900/50 p-3 "
 						>
 							<div class="mb-2 flex items-center justify-between">
 								<span class="text-xs font-semibold tracking-wide text-blue-300 uppercase"
@@ -468,16 +468,17 @@
 												{match.alliance === 'red' ? '🔴' : match.alliance === 'blue' ? '🔵' : '⚪'}
 												{match.alliance?.toUpperCase()}
 											</span>
-											<span class="text-md rounded-md bg-green-700 px-2 font-bold text-white">
-												{formatTime(match.autoStartTime)}
-											</span>
-											{#if match.startTime}
-												<span class="text-md rounded-md bg-blue-700 px-2 text-white">
+											{#if match.autoStartTime}
+												<span class="text-md rounded-md bg-green-700 px-2 py-1 font-bold text-white">
+													{formatTime(match.autoStartTime)}
+												</span>
+											
+											{:else if match.startTime}
+												<span class="text-md rounded-md bg-green-700 px-2 py-1 text-white">
 													{formatTime(match.startTime)}
 												</span>
-											{/if}
-											{#if match.queueTime}
-												<span class="text-xs text-yellow-400">
+											{:else if match.queueTime}
+												<span class="text-xs bg-green-700 text-yellow-400">
 													Q: {formatTime(match.queueTime)}
 												</span>
 											{/if}
@@ -501,23 +502,23 @@
 								{#each completedMatches as match}
 									<button
 										onclick={() => openMatchDetails(match)}
-										class="hover:bg-gray-750 group flex w-full cursor-pointer items-center justify-between rounded-lg bg-gray-800 px-3 py-2 text-sm opacity-80 transition"
+										class=" group flex w-full cursor-pointer items-center text-gray-200 {(match.score ?? 0) > (match.opponentScore ?? 0) ? " bg-green-800 " : "bg-red-800"} justify-between rounded-lg px-3 py-2 text-sm opacity-80 transition"
 									>
 										<div class="flex items-center gap-2">
-											<span class="text-md font-mono text-gray-400 group-hover:text-gray-300"
+											<span class="text-md font-mono text-gray-300 group-hover:text-gray-200"
 												>Q{match.matchNumber}</span
 											>
 										</div>
 										<div class="flex items-center gap-3">
-											<span class="text-md text-gray-500">
+											<span class="text-md ">
 												{match.alliance === 'red' ? '🔴' : match.alliance === 'blue' ? '🔵' : '⚪'}
 												{match.alliance?.toUpperCase()}
 											</span>
-											<span class="text-md font-mono text-gray-400">
+											<span class="text-md font-mono ">
 												{match.score ?? '-'}-{match.opponentScore ?? '-'}
 											</span>
 											{#if match.actualStartTime}
-												<span class="text-md rounded-md bg-gray-700 px-2 text-gray-300">
+												<span class="text-md rounded-md bg-gray-700 px-2 py-1">
 													{formatTime(match.actualStartTime)}
 												</span>
 											{/if}

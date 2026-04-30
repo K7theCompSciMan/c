@@ -1,32 +1,44 @@
-# Build outputs
-dist/
-build/
-.svelte-kit/
-
-# Dependencies
-node_modules/
-
+```
 # Environment variables
 .env
 .env.local
 .env.*
 
-# Editor/IDE
-.vscode/
-.idea/
-*.swp
-*.swo
-*.tmp
+# Dependencies
+node_modules/
 
 # Logs
 *.log
 
-# Coverage
+# Build outputs
+dist/
+build/
+target/
+
+# Cache directories
+.cache/
+.node_cache/
+.npm/
+.yarn/
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
+# IDE specific
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Coverage reports
 coverage/
 htmlcov/
 .coverage
 
-# Python
+# Python specific (if applicable)
 __pycache__/
 *.pyc
 *.pyo
@@ -37,63 +49,20 @@ venv/
 .venv/
 pip-log.txt
 pip-delete-this-directory.txt
-.tox/
-.coverage*
-.cache
-nosetests.xml
-coverage.xml
-*.cover
-*.log
-.git/
-
-# Node
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# OS generated files
-.DS_Store
-.DS_Store?
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-*.nib
-*~.nib
-.nib
-*~
-#*#
-*.bak
-*.swp
-*.swo
-*~
-
-# Compiled JavaScript
-*.min.js
-*.map
-
-# Temporary folders
-tmp/
-temp/
-
-# Svelte specific
-.cjs
-.mjs
-
-# General build artifacts
-*.exe
-*.dll
 *.so
-*.a
-*.obj
-*.out
-*.class
-*.jar
-*.war
+.Python
+.pytest_cache/
+.mypy_cache/
+
+# SvelteKit specific
+.svelte-kit/
+static/build/
+.output/
+
+# Compressed files
 *.zip
-*.tar
 *.gz
+*.tar
 *.tgz
 *.bz2
 *.xz
@@ -113,475 +82,4 @@ temp/
 *.tar.bz2
 *.tar.xz
 *.tar.zst
-
-# Cache directories
-.haskell
-.stack-work/
-.cargo/
-.target/
-.gradle/
-.mypy_cache/
-.pytest_cache/
-.julia/
-
-# Distribution / packaging
-.Python
-env/
-venv/
-.venv/
-env.bak/
-venv.bak/
-.venv.bak/
-
-# Testing
-.pytest_cache/
-.coverage*/
-htmlcov/
-.tox/
-
-# Sensitive files
-config/secrets.yml
-secrets.json
-
-# Generated documentation
-docs/_build/
-docs/build/
-
-# CI/CD
-.github/
-.gitlab/
-
-# Compression artifacts
-*.zip
-*.tar.*
-*.gz
-*.rar
-*.7z
-*.bz2
-*.xz
-*.zst
-
-# Temporary files
-*.tmp
-*.temp
-*.log
-*.swp
-*.swo
-
-# IDE specific
-.vscode/
-.idea/
-.settings/
-.project
-.classpath
-*.launch
-.metadata
-bin/
-gen/
-out/
-target/
-build/
-
-# OS specific
-.DS_Store
-Thumbs.db
-desktop.ini
-ehthumbs.db
-Icon?
-Network Trash Folder
-Temporary Items
-.Trash-*
-.VolumeIcon.icns
-.Spotlight-V100
-.fseventsd
-.UnderstandMetrics
-.UnderstandMetrics.*
-.UnderstandMetrics_*.xml
-.UnderstandMetrics_*.json
-.UnderstandMetrics_*.yml
-.UnderstandMetrics_*.yaml
-.UnderstandMetrics_*.toml
-.UnderstandMetrics_*.cfg
-.UnderstandMetrics_*.ini
-
-# Build systems
-cmake-build-*/
-Makefile
-makefile
-CMakeFiles/
-CMakeCache.txt
-cmake_install.manifest
-install_manifest.txt
-compile_commands.json
-
-# Docker
-.dockerignore
-.docker/
-
-# Database
-*.db
-*.db-journal
-*.sqlite
-*.sqlite3
-
-# Package managers
-node_modules/
-bower_components/
-jspm_packages/
-web_modules/
-.npm/
-.yarn/
-.yarn-cache/
-.bower-cache/
-.bower-registry/
-.bower-tmp/
-.jspm/
-.npmrc
-.yarnrc
-.bowerrc
-.npmignore
-
-# Runtime data
-logs/
-*.pid
-*.seed
-*.pid.lock
-
-# Debug
-*.stackdump
-
-# User-specific
-*.idb
-*.pdb
-*.ilk
-*.dll.manifest
-*.manifest
-*.res
-
-# Code coverage
-coverage.lcov
-lcov.info
-*.lcov
-*.info
-
-# Documentation
-doc/api.json
-
-# Various tools
-.hg/
-.svn/
-.CVS/
-.RCS/
-.DS_Store
-._*
-.Spotlight-V100
-.Trashes
-ehthumbs.db
-Thumbs.db
-*.nib
-*~.nib
-.nib
-*~
-#*#
-*.bak
-*.swp
-*.swo
-*~
-
-# Temporary files
-tmp/
-temp/
-.tmp/
-.temp/
-
-# Configuration
-.config/
-.local/
-
-# Cache
-.cache/
-.cached/
-
-# Lock files
-*.lock
-package-lock.json
-yarn.lock
-Gemfile.lock
-Pipfile.lock
-poetry.lock
-
-# Secrets
-.secret
-.secrets
-.credentials
-.tokens
-.keys
-.key
-.crt
-.pem
-.p12
-.pfx
-.ppk
-.openssl
-.ssl/
-
-# Temporary internet files
-Temporary Internet Files/
-[temp]
-*
-
-# Vim swap files
-[._]*.s[a-w][a-z]
-[._]s[a-w][a-z]
-*.un~
-Session.vim
-.netrwhist
-*~
-
-# Emacs
-*~
-\#*\#
-/.emacs.desktop
-/.emacs.desktop.lock
-*.elc
-auto-save-list
-tramp
-.\#*
-#*#
-*.elc
-*.org-id-locations
-*_flymake.*
-*_flymake
-
-# Visual Studio Code
-.vscode/tasks.json
-.vscode/launch.json
-.vscode/settings.json
-.vscode/keybindings.json
-.vscode/*.json
-.vscode/*.code-snippets
-.vscode/suggestedextensions.json
-.vscode/extensions.json
-.vscode/ftp-sync.json
-.vscode/ftp-simple.json
-.vscode/sftp.json
-.vscode/workbench.json
-.vscode/workspaces.xml
-.vscode/backup/
-.vscode/history/
-.vscode/restore/
-.vscode/workspaceStorage/
-.vscode/extensions/
-
-# IntelliJ IDEA
-.idea/*
-!.idea/codeStyles/
-!.idea/inspectionProfiles/
-!.idea/runConfigurations/
-!.idea/vcs.xml
-!.idea/jsLibraryMappings.xml
-!.idea/compiler.xml
-!.idea/encodings.xml
-!.idea/factory.xml
-!.idea/jarRepositories.xml
-!.idea/misc.xml
-!.idea/modules.xml
-!.idea/qaplug_profiles.xml
-!.idea/scopes/scope_settings.xml
-!.idea/webServers.xml
-!.idea/webContexts.xml
-!.idea/migration/
-!.idea/shelf/
-
-# PyCharm
-.idea/*
-!.idea/codeStyles/
-!.idea/inspectionProfiles/
-!.idea/runConfigurations/
-!.idea/vcs.xml
-!.idea/jsLibraryMappings.xml
-!.idea/compiler.xml
-!.idea/encodings.xml
-!.idea/factory.xml
-!.idea/jarRepositories.xml
-!.idea/misc.xml
-!.idea/modules.xml
-!.idea/qaplug_profiles.xml
-!.idea/scopes/scope_settings.xml
-!.idea/webServers.xml
-!.idea/webContexts.xml
-!.idea/migration/
-!.idea/shelf/
-
-# WebStorm
-.idea/*
-!.idea/codeStyles/
-!.idea/inspectionProfiles/
-!.idea/runConfigurations/
-!.idea/vcs.xml
-!.idea/jsLibraryMappings.xml
-!.idea/compiler.xml
-!.idea/encodings.xml
-!.idea/factory.xml
-!.idea/jarRepositories.xml
-!.idea/misc.xml
-!.idea/modules.xml
-!.idea/qaplug_profiles.xml
-!.idea/scopes/scope_settings.xml
-!.idea/webServers.xml
-!.idea/webContexts.xml
-!.idea/migration/
-!.idea/shelf/
-
-# Android Studio
-.idea/
-*.iml
-*.iml~
-*.iws
-.gradle/
-local.properties
-captures/
-*.cap
-*.trace
-
-# NetBeans
-/nbproject/private/
-/nbbuild/
-/dist/
-/nbdist/
-/.nb-gradle/
-
-# Eclipse
-.metadata
-bin/
-tmp/
-*.tmp
-*.bak
-*.swp
-*~.nib
-local.properties
-.settings/
-.loadpath
-.project
-.pydevproject
-.cobertura.xml
-.classpath
-.factorypath
-.launch
-.wtpmodules
-.flexLibProperties
-.externalToolBuilders/
-.apt_generated/
-.apt_generated_sources/
-.apt_generated_test_sources/
-.apt_generated_resources/
-.apt_generated_test_resources/
-.apt_generated_classes/
-.apt_generated_test_classes/
-.apt_generated_jars/
-.apt_generated_test_jars/
-.apt_generated_libs/
-.apt_generated_test_libs/
-.apt_generated_configs/
-.apt_generated_test_configs/
-.apt_generated_properties/
-.apt_generated_test_properties/
-.apt_generated_xml/
-.apt_generated_test_xml/
-.apt_generated_json/
-.apt_generated_test_json/
-.apt_generated_yaml/
-.apt_generated_test_yaml/
-.apt_generated_toml/
-.apt_generated_test_toml/
-.apt_generated_cfg/
-.apt_generated_test_cfg/
-.apt_generated_ini/
-.apt_generated_test_ini/
-
-# Visual Studio
-*.user
-*.userosscache
-*.suo
-*.userprefs
-*.aps
-*.vcxproj.filters
-*.VC.db
-*.VC.VC.opendb
-*.VC.VC.opendb-shm
-*.VC.VC.opendb-wal
-*.VC.opendb
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opendb-wal
-*.VC.opendb-shm
-*.VC.opend......
+```
