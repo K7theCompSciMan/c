@@ -39,5 +39,3 @@ export type MatchEntry = {
   /** Queue status */
   queueStatus?: 'upcoming' | 'queued' | 'in-progress' | 'completed';
 };
-
-export type FTCMatchEntry

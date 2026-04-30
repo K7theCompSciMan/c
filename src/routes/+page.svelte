@@ -21,9 +21,57 @@
 	const errors = writable<Record<string, string>>({});
 	const loading = writable<Record<string, boolean>>({});
 	const selectedMatch = writable<MatchEntry | null>(null);
+	// Track expanded state for each team (true = show all matches, false = show next match only)
+	const expandedTeams = writable<Record<string, boolean>>({});
 
 	function teamKey(team: Team) {
 		return `${team.type}-${team.number}-${team.event}`;
+	}
+
+	// Load matches from localStorage on init
+	function loadFromStorage() {
+		try {
+			const stored = localStorage.getItem('worlds-tracker-matches');
+			if (stored) {
+				const parsed = JSON.parse(stored);
+				matches.set(parsed);
+			}
+			// Load expanded states
+			const expandedStored = localStorage.getItem('worlds-tracker-expanded');
+			if (expandedStored) {
+				expandedTeams.set(JSON.parse(expandedStored));
+			}
+		} catch (e) {
+			console.error('Failed to load from localStorage:', e);
+		}
+	}
+
+	// Save matches to localStorage
+	function saveToStorage() {
+		try {
+			localStorage.setItem('worlds-tracker-matches', JSON.stringify(get(matches)));
+		} catch (e) {
+			console.error('Failed to save to localStorage:', e);
+		}
+	}
+
+	// Save expanded state to localStorage
+	function saveExpandedState() {
+		try {
+			localStorage.setItem('worlds-tracker-expanded', JSON.stringify(get(expandedTeams)));
+		} catch (e) {
+			console.error('Failed to save expanded state:', e);
+		}
+	}
+
+	// Toggle expanded state for a team
+	function toggleExpanded(team: Team) {
+		const key = teamKey(team);
+		expandedTeams.update((states) => {
+			const newStates = { ...states, [key]: !states[key] };
+			return newStates;
+		});
+		saveExpandedState();
 	}
 
 	async function loadTeam(team: Team) {
@@ -35,15 +83,32 @@
 			const fetcher = team.type === 'frc' ? fetchFRCMatches : fetchFTCMatches;
 			const result = await fetcher(team);
 			matches.update((m) => ({ ...m, [key]: result }));
+			saveToStorage(); // Save after successful fetch
 		} catch (err: any) {
-			errors.update((e) => ({ ...e, [key]: err.message ?? 'Unknown error' }));
+			// Don't update error state during auto-refresh if we already have data
+			const currentMatches = get(matches);
+			if (!currentMatches[key] || currentMatches[key].length === 0) {
+				errors.update((e) => ({ ...e, [key]: err.message ?? 'Unknown error' }));
+			} else {
+				console.warn(
+					`Auto-refresh failed for ${team.type.toUpperCase()} ${team.number}:`,
+					err.message
+				);
+			}
 		} finally {
 			loading.update((l) => ({ ...l, [key]: false }));
 		}
 	}
 
 	async function refreshAll() {
-		await Promise.all(get(teams).map(loadTeam));
+        // Use Promise.allSettled to prevent one failure from blocking others
+    			const results = await Promise.allSettled(get(teams).map(loadTeam));
+    			results.forEach((result, index) => {
+    				if (result.status === 'rejected') {
+    					const team = get(teams)[index];
+    					console.error(`Failed to refresh ${team.type.toUpperCase()} ${team.number}:`, result.reason);
+    				}
+    			});
 	}
 
 	function openMatchDetails(match: MatchEntry) {
@@ -91,14 +156,34 @@
 		return matches.filter((m) => !m.isPlayed);
 	}
 
+	// Get completed matches
+	function getCompletedMatches(matches: MatchEntry[]): MatchEntry[] {
+		return matches.filter((m) => m.isPlayed);
+	}
+
 	// Get next match (first upcoming)
 	function getNextMatch(matches: MatchEntry[]): MatchEntry | null {
 		const upcoming = getUpcomingMatches(matches);
 		return upcoming.length > 0 ? upcoming[0] : null;
 	}
+
+	// Initialize: load from storage and then refresh
+	loadFromStorage();
+	refreshAll();
+
+	// Auto-refresh every 30 seconds
+	const autoRefreshInterval = setInterval(() => {
+		refreshAll();
+	}, 60000);
+
+	// Cleanup on component destroy
+	import { onDestroy } from 'svelte';
+	onDestroy(() => {
+		clearInterval(autoRefreshInterval);
+	});
 </script>
 
-<div class="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black p-6 text-white">
+<div class="min-h-screen bg-linear-to-br from-gray-950 via-gray-900 to-black p-6 text-white">
 	<!-- HEADER -->
 	<div class="mb-6 flex items-start justify-between">
 		<div>
@@ -254,6 +339,9 @@
 			{@const isLoading = $loading[key]}
 			{@const sortedMatches = sortMatches(teamMatches || [])}
 			{@const nextMatch = getNextMatch(teamMatches || [])}
+			{@const isExpanded = $expandedTeams[key] ?? false}
+			{@const upcomingMatches = getUpcomingMatches(sortedMatches)}
+			{@const completedMatches = getCompletedMatches(sortedMatches)}
 
 			<div class="rounded-xl border border-gray-800 bg-gray-900 p-4 shadow-lg">
 				<!-- Card Header -->
@@ -274,6 +362,12 @@
 						>
 							Refresh
 						</button>
+						<button
+							onclick={() => toggleExpanded(team)}
+							class="rounded bg-blue-800 px-2 py-1 text-xs transition hover:bg-blue-700"
+						>
+							{isExpanded ? '▼ Collapse' : '▶ Expand'}
+						</button>
 						<span class="rounded bg-gray-800 px-2 py-1 text-xs text-gray-400">
 							{team.type === 'frc' ? '🔵 FRC' : '🟡 FTC'}
 						</span>
@@ -287,100 +381,153 @@
 					</div>
 				{/if}
 
-				<!-- Next Match Highlight -->
-				{#if nextMatch && !isLoading}
-					<div
-						class="mb-4 rounded-lg border border-blue-700/50 bg-gradient-to-r from-blue-900/50 to-purple-900/50 p-3"
-					>
-						<div class="mb-2 flex items-center justify-between">
-							<span class="text-xs font-semibold tracking-wide text-blue-300 uppercase"
-								>Next Match</span
-							>
-							<span class={`rounded px-2 py-0.5 text-xs ${getStatusColor(nextMatch.queueStatus)}`}>
-								{nextMatch.queueStatus === 'queued' ? '🔔 Queued' : '⏳ Upcoming'}
-							</span>
-						</div>
-						<div class="flex items-center justify-between">
-							<div>
-								<span class="text-2xl font-bold text-white">Q{nextMatch.matchNumber}</span>
-								<span class="ml-2 text-sm text-gray-400">
-									{nextMatch.alliance === 'red'
-										? '🔴 Red'
-										: nextMatch.alliance === 'blue'
-											? '🔵 Blue'
-											: 'IDK'}
+				{#if !isExpanded}
+					<!-- Collapsed view: only show next match -->
+					{#if nextMatch && !isLoading}
+						<div
+							class="mb-4 rounded-lg border border-blue-700/50 bg-gradient-to-r from-blue-900/50 to-purple-900/50 p-3"
+						>
+							<div class="mb-2 flex items-center justify-between">
+								<span class="text-xs font-semibold tracking-wide text-blue-300 uppercase"
+									>Next Match</span
+								>
+								<span
+									class={`rounded px-2 py-0.5 text-xs ${getStatusColor(nextMatch.queueStatus)}`}
+								>
+									{nextMatch.queueStatus === 'queued' ? '🔔 Queued' : '⏳ Upcoming'}
 								</span>
 							</div>
-							<div class="text-right">
-								{#if nextMatch.startTime}
-									<div class="font-mono text-gray-300">{formatTime(nextMatch.startTime)}</div>
-								{/if}
-								<div class="font-mono text-gray-300 text-lg">{formatTime(nextMatch.autoStartTime)}</div>
-								{#if nextMatch.queueTime}
-									<div class="text-xs text-yellow-400">
-										Queue: {formatTime(nextMatch.queueTime)}
+							<div class="flex items-center justify-between">
+								<div>
+									<span class="text-2xl font-bold text-white">Q{nextMatch.matchNumber}</span>
+									<span class="ml-2 text-sm text-gray-400">
+										{nextMatch.alliance === 'red'
+											? '🔴 Red'
+											: nextMatch.alliance === 'blue'
+												? '🔵 Blue'
+												: 'IDK'}
+									</span>
+								</div>
+								<div class="text-right">
+									{#if nextMatch.startTime}
+										<div class="font-mono text-gray-300">{formatTime(nextMatch.startTime)}</div>
+									{/if}
+									<div class="font-mono text-lg font-bold text-green-400">
+										{formatTime(nextMatch.autoStartTime)}
 									</div>
-								{/if}
+									{#if nextMatch.queueTime}
+										<div class="text-xs text-yellow-400">
+											Queue: {formatTime(nextMatch.queueTime)}
+										</div>
+									{/if}
+								</div>
 							</div>
+							<button
+								onclick={() => openMatchDetails(nextMatch)}
+								class="mt-2 w-full text-xs text-blue-400 underline hover:text-blue-300"
+							>
+								View full details →
+							</button>
 						</div>
-						<button
-							onclick={() => openMatchDetails(nextMatch)}
-							class="mt-2 w-full text-xs text-blue-400 underline hover:text-blue-300"
+					{:else if !isLoading && sortedMatches.length > 0}
+						<div
+							class="mb-4 rounded-lg border border-gray-700 bg-gray-800 p-3 text-center text-sm text-gray-400"
 						>
-							View full details →
-						</button>
-					</div>
+							✓ All matches completed
+						</div>
+					{/if}
 				{/if}
 
-				<!-- Match list -->
-				{#if sortedMatches && sortedMatches.length > 0}
-					<div>
-						<h3 class="mb-2 text-xs tracking-wide text-gray-500 uppercase">
-							{getUpcomingMatches(sortedMatches).length > 0 ? 'Upcoming Matches' : 'All Matches'}
-						</h3>
-						<div class="space-y-1">
-							{#each sortedMatches.slice(0, 8) as match}
-								<button
-									onclick={() => openMatchDetails(match)}
-									class="hover:bg-gray-750 group flex w-full cursor-pointer items-center justify-between rounded-lg bg-gray-800 px-3 py-2 text-sm transition"
-								>
-									<div class="flex items-center gap-2">
-										<span class="text-md font-mono text-gray-300 group-hover:text-white"
-											>Q{match.matchNumber}</span
-										>
-										{#if match.queueStatus === 'queued'}
-											<span class="text-xs text-yellow-500">🔔</span>
-										{/if}
-									</div>
-									<div class="flex items-center gap-3">
-										<span class="text-md text-gray-400">
-											{match.alliance === 'red' ? '🔴' : match.alliance === 'blue' ? '🔵' : '⚪'}
-											{match.alliance.toUpperCase()}
-										</span>
-										{#if match.isPlayed}
-											<span class="text-md font-mono text-gray-500">
+				<!-- Match list (shown when expanded) -->
+				{#if isExpanded && sortedMatches && sortedMatches.length > 0}
+					<!-- Upcoming Matches Section -->
+					{#if upcomingMatches.length > 0}
+						<div class="mb-4">
+							<h3
+								class="mb-2 flex items-center gap-2 text-sm font-semibold tracking-wide text-green-400 uppercase"
+							>
+								<span class="h-2 w-2 rounded-full bg-green-500"></span>
+								Upcoming Matches ({upcomingMatches.length})
+							</h3>
+							<div class="space-y-1">
+								{#each upcomingMatches as match}
+									<button
+										onclick={() => openMatchDetails(match)}
+										class="hover:bg-gray-750 group flex w-full cursor-pointer items-center justify-between rounded-lg bg-gray-800 px-3 py-2 text-sm transition"
+									>
+										<div class="flex items-center gap-2">
+											<span class="text-md font-mono text-gray-300 group-hover:text-white"
+												>Q{match.matchNumber}</span
+											>
+											{#if match.queueStatus === 'queued'}
+												<span class="text-xs text-yellow-500">🔔</span>
+											{/if}
+										</div>
+										<div class="flex items-center gap-3">
+											<span class="text-md text-gray-400">
+												{match.alliance === 'red' ? '🔴' : match.alliance === 'blue' ? '🔵' : '⚪'}
+												{match.alliance?.toUpperCase()}
+											</span>
+											<span class="text-md rounded-md bg-green-700 px-2 font-bold text-white">
+												{formatTime(match.autoStartTime)}
+											</span>
+											{#if match.startTime}
+												<span class="text-md rounded-md bg-blue-700 px-2 text-white">
+													{formatTime(match.startTime)}
+												</span>
+											{/if}
+											{#if match.queueTime}
+												<span class="text-xs text-yellow-400">
+													Q: {formatTime(match.queueTime)}
+												</span>
+											{/if}
+										</div>
+									</button>
+								{/each}
+							</div>
+						</div>
+					{/if}
+
+					<!-- Completed Matches Section -->
+					{#if completedMatches.length > 0}
+						<div>
+							<h3
+								class="mb-2 flex items-center gap-2 text-sm font-semibold tracking-wide text-gray-400 uppercase"
+							>
+								<span class="h-2 w-2 rounded-full bg-gray-500"></span>
+								Completed Matches ({completedMatches.length})
+							</h3>
+							<div class="space-y-1">
+								{#each completedMatches as match}
+									<button
+										onclick={() => openMatchDetails(match)}
+										class="hover:bg-gray-750 group flex w-full cursor-pointer items-center justify-between rounded-lg bg-gray-800 px-3 py-2 text-sm opacity-80 transition"
+									>
+										<div class="flex items-center gap-2">
+											<span class="text-md font-mono text-gray-400 group-hover:text-gray-300"
+												>Q{match.matchNumber}</span
+											>
+										</div>
+										<div class="flex items-center gap-3">
+											<span class="text-md text-gray-500">
+												{match.alliance === 'red' ? '🔴' : match.alliance === 'blue' ? '🔵' : '⚪'}
+												{match.alliance?.toUpperCase()}
+											</span>
+											<span class="text-md font-mono text-gray-400">
 												{match.score ?? '-'}-{match.opponentScore ?? '-'}
 											</span>
-										{/if}
-                                        <span class="text-md rounded-md bg-blue-700 px-2 text-white">
-                                            {formatTime(match.autoStartTime)}
-                                        </span>
-										{#if match.startTime}
-											<span class="text-md rounded-md bg-blue-700 px-2 text-white">
-												{formatTime(match.startTime)}
-											</span>
-										{/if}
-									</div>
-								</button>
-							{/each}
-							{#if sortedMatches.length > 8}
-								<p class="pt-1 text-center text-xs text-gray-600">
-									+{sortedMatches.length - 8} more matches
-								</p>
-							{/if}
+											{#if match.actualStartTime}
+												<span class="text-md rounded-md bg-gray-700 px-2 text-gray-300">
+													{formatTime(match.actualStartTime)}
+												</span>
+											{/if}
+										</div>
+									</button>
+								{/each}
+							</div>
 						</div>
-					</div>
-				{:else if !isLoading && !error}
+					{/if}
+				{:else if !isLoading && !error && (!sortedMatches || sortedMatches.length === 0)}
 					<div class="py-2 text-sm text-gray-500">No data — press Refresh to load matches.</div>
 				{/if}
 			</div>
