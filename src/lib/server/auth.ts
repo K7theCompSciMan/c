@@ -1,5 +1,5 @@
 import { FRC_USERNAME, FRC_TOKEN, FTC_USERNAME, FTC_TOKEN } from '$env/static/private';
-import { Buffer } from 'buffer';
+import { Buffer } from 'node:buffer';
 
 export function frcAuth() {
   if (!FRC_USERNAME || !FRC_TOKEN) {
