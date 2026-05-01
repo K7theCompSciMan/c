@@ -356,7 +356,7 @@
 						</h2>
 						<p class="mt-0.5 text-xs text-gray-500">Event: {team.event}</p>
 					</div>
-					<div id="other details" class="flex w-[75%] items-center border">
+					<div id="other details" class="flex w-[75%] items-center">
 						<a
 							href={team.type == 'frc'
 								? 'https://www.youtube.com/live/skZTO76_SB4?si=4h7DFJvL5a1hUNp1'
@@ -435,6 +435,11 @@
 									<div class="text-2xl font-bold">QUEUEING NOW</div>
 								{/if}
 								<div class="text-right">
+									{#if nextMatch.queueTime}
+										<div class="font-mono text-lg font-bold text-amber-500">
+											Queue: {formatTime(nextMatch.queueTime)}
+										</div>
+									{/if}
 									{#if nextMatch.startTime}
 										<div class="font-mono text-lg font-bold text-green-400">
 											Start: {formatTime(nextMatch.startTime)}
@@ -442,11 +447,6 @@
 									{:else if nextMatch.autoStartTime}
 										<div class="font-mono text-lg font-bold text-green-400">
 											{formatTime(nextMatch.autoStartTime)}
-										</div>
-									{/if}
-									{#if nextMatch.queueTime}
-										<div class="font-mono text-lg font-bold text-amber-500">
-											Queue: {formatTime(nextMatch.queueTime)}
 										</div>
 									{/if}
 								</div>
