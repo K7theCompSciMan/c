@@ -177,7 +177,7 @@
 	// Auto-refresh every 30 seconds
 	const autoRefreshInterval = setInterval(() => {
 		refreshAll();
-	}, 60000);
+	}, 600000);
 
 	// Cleanup on component destroy
 	import { onDestroy } from 'svelte';
