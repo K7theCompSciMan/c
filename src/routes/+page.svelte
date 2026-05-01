@@ -356,6 +356,21 @@
 						</h2>
 						<p class="mt-0.5 text-xs text-gray-500">Event: {team.event}</p>
 					</div>
+					<div id="other details" class="flex w-[75%] items-center border">
+						<a
+							href={team.type == 'frc'
+								? 'https://www.youtube.com/live/skZTO76_SB4?si=4h7DFJvL5a1hUNp1'
+								: team.number == '1002'
+									? 'https://www.youtube.com/live/ATn3vKK9Cac?si=ZtlkUp7B6vDNsZEU'
+									: 'https://www.youtube.com/live/ps5rsAdW4-Q?si=-W3wr68fHaeYyX08'}
+							target="_blank"
+							><button
+								class="cursor-pointer rounded-lg bg-blue-700 p-2 transition-all hover:bg-blue-500"
+								>Watch</button
+							></a
+						>
+						<!-- <h2 class="ml-2 text-center">{team.type == 'frc' ? 'EPA: Not ' : 'OPR: Not '}</h2> -->
+					</div>
 					<div class="flex items-center gap-2">
 						{#if isLoading}
 							<span class="animate-pulse text-xs text-blue-400">Loading…</span>
@@ -421,8 +436,8 @@
 								{/if}
 								<div class="text-right">
 									{#if nextMatch.startTime}
-									<div class="font-mono text-lg font-bold text-green-400">
-										Start: {formatTime(nextMatch.startTime)}
+										<div class="font-mono text-lg font-bold text-green-400">
+											Start: {formatTime(nextMatch.startTime)}
 										</div>
 									{:else if nextMatch.autoStartTime}
 										<div class="font-mono text-lg font-bold text-green-400">
@@ -430,7 +445,7 @@
 										</div>
 									{/if}
 									{#if nextMatch.queueTime}
-										<div class="text-lg font-mono font-bold text-amber-500">
+										<div class="font-mono text-lg font-bold text-amber-500">
 											Queue: {formatTime(nextMatch.queueTime)}
 										</div>
 									{/if}
