@@ -19,9 +19,9 @@ export type MatchEntry = {
   autoStartTime?: string;
   matchNumber: number;
   description?: string;
-  startTime?: string;
+  startTime?: string | null;
   actualStartTime?: string;
-  queueTime?: string;
+  queueTime?: string | null;
   /** Alliance result for this team: 'red' | 'blue' | unknown */
   alliance?: 'red' | 'blue' | 'unknown';
   /** Score for this team's alliance, if posted */
@@ -38,4 +38,5 @@ export type MatchEntry = {
   isPlayed?: boolean;
   /** Queue status */
   queueStatus?: 'upcoming' | 'queued' | 'in-progress' | 'completed';
+  onDeckTime?: string | null;
 };

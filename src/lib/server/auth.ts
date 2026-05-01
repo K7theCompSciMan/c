@@ -1,4 +1,4 @@
-import { FRC_USERNAME, FRC_TOKEN, FTC_USERNAME, FTC_TOKEN } from '$env/static/private';
+import { FRC_USERNAME, FRC_TOKEN, FTC_USERNAME, FTC_TOKEN, FRC_NEXUS_KEY, FTC_NEXUS_KEY } from '$env/static/private';
 import { Buffer } from 'node:buffer';
 
 export function frcAuth() {
@@ -15,4 +15,12 @@ export function ftcAuth() {
   }
 
   return Buffer.from(`${FTC_USERNAME}:${FTC_TOKEN}`).toString('base64');
+}
+
+export function frcNexusAuth() {
+  return FRC_NEXUS_KEY;
+}
+
+export function ftcNexusAuth() {
+  return FTC_NEXUS_KEY;
 }

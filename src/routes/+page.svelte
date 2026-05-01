@@ -101,14 +101,17 @@
 	}
 
 	async function refreshAll() {
-        // Use Promise.allSettled to prevent one failure from blocking others
-    			const results = await Promise.allSettled(get(teams).map(loadTeam));
-    			results.forEach((result, index) => {
-    				if (result.status === 'rejected') {
-    					const team = get(teams)[index];
-    					console.error(`Failed to refresh ${team.type.toUpperCase()} ${team.number}:`, result.reason);
-    				}
-    			});
+		// Use Promise.allSettled to prevent one failure from blocking others
+		const results = await Promise.allSettled(get(teams).map(loadTeam));
+		results.forEach((result, index) => {
+			if (result.status === 'rejected') {
+				const team = get(teams)[index];
+				console.error(
+					`Failed to refresh ${team.type.toUpperCase()} ${team.number}:`,
+					result.reason
+				);
+			}
+		});
 	}
 
 	function openMatchDetails(match: MatchEntry) {
@@ -238,6 +241,11 @@
 								🕐 {formatTime($selectedMatch.startTime)}
 							</span>
 						{/if}
+						{#if $selectedMatch.autoStartTime}
+							<span class="text-xl text-yellow-400">
+								🕐 {formatTime($selectedMatch.autoStartTime)}
+							</span>
+						{/if}
 						{#if $selectedMatch.queueTime}
 							<span class="text-xl text-yellow-400">
 								📋 Queue: {formatTime($selectedMatch.queueTime)}
@@ -286,9 +294,7 @@
 								{#each $selectedMatch.redTeams as t}
 									<div class="flex items-center justify-between">
 										<span class="font-mono text-gray-300">#{t.teamNumber}</span>
-										<span class="text-sm text-gray-400"
-											>{t.teamNameShort || t.schoolName || ''}</span
-										>
+										<span class="text-sm text-gray-400">{t.teamNameShort || ''}</span>
 									</div>
 								{/each}
 							{:else}
@@ -308,9 +314,7 @@
 								{#each $selectedMatch.blueTeams as t}
 									<div class="flex items-center justify-between">
 										<span class="font-mono text-gray-300">#{t.teamNumber}</span>
-										<span class="text-sm text-gray-400"
-											>{t.teamNameShort || t.schoolName || ''}</span
-										>
+										<span class="text-sm text-gray-400">{t.teamNameShort}</span>
 									</div>
 								{/each}
 							{:else}
@@ -385,7 +389,11 @@
 					<!-- Collapsed view: only show next match -->
 					{#if nextMatch && !isLoading}
 						<div
-							class="mb-4 rounded-lg border border-blue-700/50 bg-linear-to-r from-blue-900/50 to-purple-900/50 p-3 "
+							class="mb-4 rounded-lg border border-blue-700/50 bg-linear-to-r from-blue-900/50 to-purple-900/50 p-3 {new Date(
+								nextMatch.queueTime!
+							) < new Date()
+								? 'bg-amber-500 '
+								: ''}"
 						>
 							<div class="mb-2 flex items-center justify-between">
 								<span class="text-xs font-semibold tracking-wide text-blue-300 uppercase"
@@ -408,15 +416,21 @@
 												: 'IDK'}
 									</span>
 								</div>
+								{#if new Date(nextMatch.queueTime!) < new Date()}
+									<div class="text-2xl font-bold">QUEUEING NOW</div>
+								{/if}
 								<div class="text-right">
 									{#if nextMatch.startTime}
-										<div class="font-mono text-gray-300">{formatTime(nextMatch.startTime)}</div>
-									{/if}
 									<div class="font-mono text-lg font-bold text-green-400">
-										{formatTime(nextMatch.autoStartTime)}
-									</div>
+										Start: {formatTime(nextMatch.startTime)}
+										</div>
+									{:else if nextMatch.autoStartTime}
+										<div class="font-mono text-lg font-bold text-green-400">
+											{formatTime(nextMatch.autoStartTime)}
+										</div>
+									{/if}
 									{#if nextMatch.queueTime}
-										<div class="text-xs text-yellow-400">
+										<div class="text-lg font-mono font-bold text-amber-500">
 											Queue: {formatTime(nextMatch.queueTime)}
 										</div>
 									{/if}
@@ -468,18 +482,22 @@
 												{match.alliance === 'red' ? '🔴' : match.alliance === 'blue' ? '🔵' : '⚪'}
 												{match.alliance?.toUpperCase()}
 											</span>
-											{#if match.autoStartTime}
-												<span class="text-md rounded-md bg-green-700 px-2 py-1 font-bold text-white">
-													{formatTime(match.autoStartTime)}
-												</span>
-											
-											{:else if match.startTime}
+											{#if match.queueTime}
+												Estimated Queue:
+												<span class="text-md rounded-md bg-amber-600 px-2 py-1 font-bold"
+													>{formatTime(match.queueTime)}</span
+												>
+											{/if}
+											{#if match.startTime}
+												Estimated Start:
 												<span class="text-md rounded-md bg-green-700 px-2 py-1 text-white">
 													{formatTime(match.startTime)}
 												</span>
-											{:else if match.queueTime}
-												<span class="text-xs bg-green-700 text-yellow-400">
-													Q: {formatTime(match.queueTime)}
+											{:else if match.autoStartTime}
+												<span
+													class="text-md rounded-md bg-green-700 px-2 py-1 font-bold text-white"
+												>
+													{formatTime(match.autoStartTime)}
 												</span>
 											{/if}
 										</div>
@@ -502,7 +520,10 @@
 								{#each completedMatches as match}
 									<button
 										onclick={() => openMatchDetails(match)}
-										class=" group flex w-full cursor-pointer items-center text-gray-200 {(match.score ?? 0) > (match.opponentScore ?? 0) ? " bg-green-800 " : "bg-red-800"} justify-between rounded-lg px-3 py-2 text-sm opacity-80 transition"
+										class=" group flex w-full cursor-pointer items-center text-gray-200 {(match.score ??
+											0) > (match.opponentScore ?? 0)
+											? ' bg-green-800 '
+											: 'bg-red-800'} justify-between rounded-lg px-3 py-2 text-sm opacity-80 transition"
 									>
 										<div class="flex items-center gap-2">
 											<span class="text-md font-mono text-gray-300 group-hover:text-gray-200"
@@ -510,11 +531,11 @@
 											>
 										</div>
 										<div class="flex items-center gap-3">
-											<span class="text-md ">
+											<span class="text-md">
 												{match.alliance === 'red' ? '🔴' : match.alliance === 'blue' ? '🔵' : '⚪'}
 												{match.alliance?.toUpperCase()}
 											</span>
-											<span class="text-md font-mono ">
+											<span class="text-md font-mono">
 												{match.score ?? '-'}-{match.opponentScore ?? '-'}
 											</span>
 											{#if match.actualStartTime}

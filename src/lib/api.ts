@@ -26,6 +26,12 @@ function parseFRCMatch(match: any, teamNumber: string): MatchEntry {
 	const score = alliance === 'red' ? redScore : alliance === 'blue' ? blueScore : null;
 	const opponentScore = alliance === 'red' ? blueScore : alliance === 'blue' ? redScore : null;
 
+
+  const queueTime = match.estimatedQueueTime ? "" + (new Date(match.estimatedQueueTime)).toString() : null;
+  const onDeckTime = match.estimatedOnDeckTime ? "" + (new Date(match.estimatedOnDeckTime)).toString() : null;
+
+  const startTime = match.estimatedStartTime ? "" + (new Date(match.estimatedStartTime)).toString() : null;
+
 	// Determine queue status based on timing
 	const now = new Date();
 	const scheduledTime = match.startTime
@@ -45,26 +51,27 @@ function parseFRCMatch(match: any, teamNumber: string): MatchEntry {
 	return {
 		matchNumber: match.matchNumber,
 		description: match.description,
-		startTime: match.startTime,
+		startTime,
 		actualStartTime: match.actualStartTime,
 		autoStartTime: match.autoStartTime,
-		queueTime: match.queueTime,
+		queueTime,
+    onDeckTime,
 		alliance,
 		score,
 		opponentScore,
 		redTeams: redTeams.map((t: any) => ({
 			teamNumber: String(t.teamNumber),
-			teamNameShort: t.teamNameShort,
+			teamNameShort: t.teamName,
 			schoolName: t.schoolName
 		})),
 		blueTeams: blueTeams.map((t: any) => ({
 			teamNumber: String(t.teamNumber),
-			teamNameShort: t.teamNameShort,
+			teamNameShort: t.teamName,
 			schoolName: t.schoolName
 		})),
 		allTeams: teams.map((t: any) => ({
 			teamNumber: String(t.teamNumber),
-			teamNameShort: t.teamNameShort,
+			teamNameShort: t.teamName,
 			schoolName: t.schoolName
 		})),
 		isPlayed: actualTime !== null || !!match.postResultTime,
@@ -98,6 +105,10 @@ function parseFTCMatch(match: any, teamNumber: string): MatchEntry {
 	const score = alliance === 'red' ? redScore : alliance === 'blue' ? blueScore : null;
 	const opponentScore = alliance === 'red' ? blueScore : alliance === 'blue' ? redScore : null;
 
+  
+  const queueTime = match.estimatedQueueTime ? "" + (new Date(match.estimatedQueueTime)).toString() : null;
+  const onDeckTime = match.estimatedOnDeckTime ? "" + (new Date(match.estimatedOnDeckTime)).toString() : null;
+
 	// Determine queue status
 	const now = new Date();
 	const scheduledTime = match.startTime ? new Date(match.startTime) : null;
@@ -115,23 +126,24 @@ function parseFTCMatch(match: any, teamNumber: string): MatchEntry {
 		description: match.description,
 		startTime: match.startTime,
 		actualStartTime: match.actualStartTime,
-		queueTime: match.queueTime,
+		queueTime,
+    onDeckTime,
 		alliance,
 		score,
 		opponentScore,
 		redTeams: redTeams.map((t: any) => ({
 			teamNumber: String(t.teamNumber),
-			teamNameShort: t.teamNameShort,
+			teamNameShort: t.teamName,
 			schoolName: t.schoolName
 		})),
 		blueTeams: blueTeams.map((t: any) => ({
 			teamNumber: String(t.teamNumber),
-			teamNameShort: t.teamNameShort,
+			teamNameShort: t.teamName,
 			schoolName: t.schoolName
 		})),
 		allTeams: teams.map((t: any) => ({
 			teamNumber: String(t.teamNumber),
-			teamNameShort: t.teamNameShort,
+			teamNameShort: t.teamName,
 			schoolName: t.schoolName
 		})),
 		isPlayed: actualTime !== null || !!match.postResultTime,

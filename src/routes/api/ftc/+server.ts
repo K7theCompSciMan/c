@@ -1,4 +1,4 @@
-import { ftcAuth } from '$lib/server/auth';
+import { ftcAuth, ftcNexusAuth } from '$lib/server/auth';
 
 export async function GET({ url, fetch }) {
 	const team = url.searchParams.get('team');
@@ -12,11 +12,12 @@ export async function GET({ url, fetch }) {
 	}
 
 	const auth = ftcAuth();
+    const nexus = ftcNexusAuth();
 
 	// FTC API v2.0: endpoint is /matches/{eventCode}
 	// Correct URL: GET /v2.0/{season}/matches/{eventCode}?tournamentLevel=qual
 	const apiUrl = `https://ftc-api.firstinspires.org/v2.0/2025/matches/${event}/?tournamentLevel=qual`;
-    const schedUrl = `https://ftc-api.firstinspires.org/v2.0/2025/schedule/${event}/?tournamentLevel=qual`
+	const schedUrl = `https://ftc-api.firstinspires.org/v2.0/2025/schedule/${event}/?tournamentLevel=qual`;
 
 	const res = await fetch(apiUrl, {
 		headers: {
@@ -25,12 +26,12 @@ export async function GET({ url, fetch }) {
 		}
 	});
 
-    const schedRes = await fetch(schedUrl, {
-        headers: {
+	const schedRes = await fetch(schedUrl, {
+		headers: {
 			Authorization: `Basic ${auth}`,
 			Accept: 'application/json'
 		}
-    });
+	});
 
 	if (!res.ok) {
 		const text = await res.text();
@@ -44,14 +45,17 @@ export async function GET({ url, fetch }) {
 	if (!schedRes.ok) {
 		const text = await schedRes.text();
 		console.error('FTC API error:', text);
-		return new Response(JSON.stringify({ error: `FTC API error ${schedRes.status}`, detail: text }), {
-			status: schedRes.status,
-			headers: { 'Content-Type': 'application/json' }
-		});
+		return new Response(
+			JSON.stringify({ error: `FTC API error ${schedRes.status}`, detail: text }),
+			{
+				status: schedRes.status,
+				headers: { 'Content-Type': 'application/json' }
+			}
+		);
 	}
 
 	const raw = await res.text();
-    // console.log(raw);
+	// console.log(raw);
 	let data: { matches?: unknown[] };
 	try {
 		data = JSON.parse(raw);
@@ -66,12 +70,12 @@ export async function GET({ url, fetch }) {
 	const allMatches: any[] = data.matches || [];
 	// console.log(allMatches);
 	// Filter to only matches involving this team
-	const teamMatches = allMatches.filter((match: any) => 
+	const teamMatches = allMatches.filter((match: any) =>
 		match.teams?.some((t: any) => String(t.teamNumber) == team)
 	);
 
-    const schedRaw = await schedRes.text();
-    // console.log(schedRaw);
+	const schedRaw = await schedRes.text();
+	// console.log(schedRaw);
 	let schedData: { schedule?: unknown[] };
 	try {
 		schedData = JSON.parse(schedRaw);
@@ -82,17 +86,59 @@ export async function GET({ url, fetch }) {
 		);
 	}
 
-    const allSchedMatches = schedData.schedule ?? [];
+	const allSchedMatches = schedData.schedule ?? [];
 
-    const teamSchedMatches = allSchedMatches.filter((match: any) => 
+	const teamSchedMatches = allSchedMatches.filter((match: any) =>
 		match.teams?.some((t: any) => String(t.teamNumber) == team)
 	);
 
-    // console.log(teamSchedMatches.slice(teamMatches.length));
+	// console.log(teamSchedMatches.slice(teamMatches.length));
 
-    const finalMatches = teamMatches.concat(teamSchedMatches.slice(teamMatches.length))
-    // console.log(allSchedMatches);
+	const finalMatches = teamMatches.concat(teamSchedMatches.slice(teamMatches.length));
+	// console.log(allSchedMatches);
 
-    // console.log(teamMatches)
-	return Response.json({ Matches: finalMatches });
+	// console.log(teamMatches)
+
+	const nexusRes = await fetch(`https://ftc.nexus/api/v1/event/2025${event}`, {
+		headers: {
+			'Nexus-Api-Key': nexus,
+			Accept: 'application/json'
+		}
+	});
+
+	if (!nexusRes.ok) {
+		const text = await nexusRes.text();
+		console.log(text);
+		return new Response(
+			JSON.stringify({ error: `FTC Nexus API error ${nexusRes.status}`, detail: text }),
+			{
+				status: nexusRes.status,
+				headers: { 'Content-Type': 'application/json' }
+			}
+		);
+	}
+	const nexusRaw = await nexusRes.text();
+	let nexusData;
+	try {
+		nexusData = JSON.parse(nexusRaw);
+	} catch {
+		return Response.json(
+			{ error: 'Invalid JSON from FTC API', rawPreview: nexusRaw.slice(0, 300) },
+			{ status: 502 }
+		);
+	}
+	let matches: any[] = [];
+	let nexusMatches: any[] = nexusData.matches;
+	finalMatches.forEach((m: any) => {
+		let nexusMatch = nexusMatches.filter((s: any) => s.label == m.description)[0];
+		matches.push({
+			...m,
+			estimatedQueueTime: nexusMatch.times.estimatedQueueTime,
+			estimatedOnDeckTime: nexusMatch.times.estimatedOnDeckTime,
+			estimatedStartTime: nexusMatch.times.estimatedStartTime
+		});
+	});
+	// console.log(matches);
+
+	return Response.json({ Matches: matches });
 }
