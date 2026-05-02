@@ -153,6 +153,41 @@ export async function GET({ url, fetch }) {
 			{ status: 502 }
 		);
 	}
+  // console.log("did smtnv")
+  // Playoff Matches
+  const elimApiUrl = `https://frc-api.firstinspires.org/v3.0/2026/matches/${event}?tournamentLevel=Playoff&?teamNumber=${team}`;
+
+	const elimRes = await fetch(elimApiUrl, {
+		headers: {
+			Authorization: `Basic ${auth}`,
+			Accept: 'application/json'
+		}
+	});
+
+	if (!elimRes.ok) {
+		const text = await elimRes.text();
+		console.log(text);
+		return new Response(JSON.stringify({ error: `FRC API error ${elimRes.status}`, detail: text }), {
+			status: elimRes.status,
+			headers: { 'Content-Type': 'application/json' }
+		});
+	}
+
+	// Read the body ONCE — never pre-consume with getReader() before res.text()/res.json()
+	const elimRaw = await elimRes.text();
+	console.log(elimRaw);
+	let elimData: { Matches?: unknown[] };
+	try {
+		elimData = JSON.parse(elimRaw);
+	} catch {
+		return Response.json(
+			{ error: 'Invalid JSON from FRC API', rawPreview: elimRaw.slice(0, 300) },
+			{ status: 502 }
+		);
+	}
+  matches.concat(elimData.Matches);
+
+
 	// Hybrid schedule wraps results in "Schedule", not "Matches"
 	return Response.json({ Matches: matches, StatboticsData: statData });
 }

@@ -12,12 +12,13 @@ export async function GET({ url, fetch }) {
 	}
 
 	const auth = ftcAuth();
-    const nexus = ftcNexusAuth();
+	const nexus = ftcNexusAuth();
 
 	// FTC API v2.0: endpoint is /matches/{eventCode}
 	// Correct URL: GET /v2.0/{season}/matches/{eventCode}?tournamentLevel=qual
 	const apiUrl = `https://ftc-api.firstinspires.org/v2.0/2025/matches/${event}/?tournamentLevel=qual`;
 	const schedUrl = `https://ftc-api.firstinspires.org/v2.0/2025/schedule/${event}/?tournamentLevel=qual`;
+	const elimUrl = `https://ftc-api.firstinspires.org/v2.0/2025/schedule/${event}/?tournamentLevel=playoff`;
 
 	const res = await fetch(apiUrl, {
 		headers: {
@@ -27,6 +28,13 @@ export async function GET({ url, fetch }) {
 	});
 
 	const schedRes = await fetch(schedUrl, {
+		headers: {
+			Authorization: `Basic ${auth}`,
+			Accept: 'application/json'
+		}
+	});
+
+	const elimRes = await fetch(elimUrl, {
 		headers: {
 			Authorization: `Basic ${auth}`,
 			Accept: 'application/json'
@@ -49,6 +57,18 @@ export async function GET({ url, fetch }) {
 			JSON.stringify({ error: `FTC API error ${schedRes.status}`, detail: text }),
 			{
 				status: schedRes.status,
+				headers: { 'Content-Type': 'application/json' }
+			}
+		);
+	}
+
+	if (!elimRes.ok) {
+		const text = await elimRes.text();
+		console.error('FTC API error:', text);
+		return new Response(
+			JSON.stringify({ error: `FTC API error ${elimRes.status}`, detail: text }),
+			{
+				status: elimRes.status,
 				headers: { 'Content-Type': 'application/json' }
 			}
 		);
@@ -94,10 +114,30 @@ export async function GET({ url, fetch }) {
 
 	// console.log(teamSchedMatches.slice(teamMatches.length));
 
-	const finalMatches = teamMatches.concat(teamSchedMatches.slice(teamMatches.length));
+	let finalMatches = teamMatches.concat(teamSchedMatches.slice(teamMatches.length));
 	// console.log(allSchedMatches);
 
 	// console.log(teamMatches)
+
+	const elimRaw = await elimRes.text();
+	// console.log(elimRaw);
+	let elimData: { schedule?: unknown[] };
+	try {
+		elimData = JSON.parse(elimRaw);
+	} catch {
+		return Response.json(
+			{ error: 'Invalid JSON from FTC API', rawPreview: elimRaw.slice(0, 300) },
+			{ status: 502 }
+		);
+	}
+	const allElimMatches = elimData.schedule ?? [];
+	const teamElimMatches = allElimMatches.filter((m: any) =>
+		m.teams?.some((t: any) => String(t.teamNumber) == team)
+	);
+
+    finalMatches = finalMatches.concat(teamElimMatches.filter((m) => {
+        
+    }))
 
 	const nexusRes = await fetch(`https://ftc.nexus/api/v1/event/2025${event}`, {
 		headers: {
