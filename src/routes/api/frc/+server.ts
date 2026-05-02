@@ -97,6 +97,62 @@ export async function GET({ url, fetch }) {
 	});
 	// console.log(matches);
 
+	//statbotics stuff
+	let statRes = await fetch('https://api.statbotics.io/v3/team_event/1002/2026joh', {
+		headers: {
+			accept: 'application/json'
+		}
+	});
+	if (!statRes.ok) {
+		const text = await statRes.text();
+		console.log(text);
+		return new Response(
+			JSON.stringify({ error: `Statbotics API error ${statRes.status}`, detail: text }),
+			{
+				status: statRes.status,
+				headers: { 'Content-Type': 'application/json' }
+			}
+		);
+	}
+	const statRaw = await statRes.text();
+	let statData;
+	try {
+		statData = JSON.parse(statRaw);
+	} catch {
+		return Response.json(
+			{ error: 'Invalid JSON from FRC API', rawPreview: statRaw.slice(0, 300) },
+			{ status: 502 }
+		);
+	}
+	let matchRes = await fetch(
+		'https://api.statbotics.io/v3/matches?team=1002&year=2026&event=2026joh&week=8&elim=false',
+		{
+			headers: {
+				accept: 'application/json'
+			}
+		}
+	);
+	if (!matchRes.ok) {
+		const text = await matchRes.text();
+		console.log(text);
+		return new Response(
+			JSON.stringify({ error: `Statbotics API error ${matchRes.status}`, detail: text }),
+			{
+				status: matchRes.status,
+				headers: { 'Content-Type': 'application/json' }
+			}
+		);
+	}
+	const matchRaw = await matchRes.text();
+	let matchData: any[] = [];
+	try {
+		matchData = JSON.parse(matchRaw);
+	} catch {
+		return Response.json(
+			{ error: 'Invalid JSON from FRC API', rawPreview: matchRaw.slice(0, 300) },
+			{ status: 502 }
+		);
+	}
 	// Hybrid schedule wraps results in "Schedule", not "Matches"
-	return Response.json({ Matches: matches });
+	return Response.json({ Matches: matches, StatboticsData: statData });
 }
